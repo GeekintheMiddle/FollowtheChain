@@ -1,18 +1,19 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 use strict;
 use warnings;
 use 5.010;
 use Time::Piece;
 
-my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $wait, $epoch, $txcount);
+my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $wait, $epoch, $txcount, $blockRest, $rest);
 
 my $blocknr = 0;
+my $loop = 0;
 
-open my $fh, '<', '/mnt/storage/bitcoin/blocks/blk00000.dat' or die "File not found: $!";
+open my $fh, '<', '/storage/block/blocks/blk00000.dat' or die "File not found: $!";
 
 binmode($fh);
 
-while (read ($fh, $buffer, 4) != 0) {
+while (read ($fh, $buffer, 4) != 0 && $loop <= 10) {
 	next unless ((unpack 'H*', $buffer) eq "f9beb4d9");
 
 	#Blocknr.
@@ -28,11 +29,10 @@ while (read ($fh, $buffer, 4) != 0) {
 	$blocksize = unpack 'i', $buffer;
 	print "Blocksize = $blocksize\n";
 
-	#Start Blockheader
 	#Read Version
 	read ($fh, $buffer, 4);
-        $version = unpack 'i', $buffer;
-        print "Version = $version\n";
+	$version = unpack 'i', $buffer;
+	print "Version = $version\n";
 
 	#Hash Prev Block
 	read ($fh, $buffer, 32);
@@ -44,26 +44,30 @@ while (read ($fh, $buffer, 4) != 0) {
 	$hashmerkel = unpack 'H*', $buffer;
 	print "Hash Merkel Root = $hashmerkel\n";
 
-        #Read Time
-        read ($fh, $buffer, 4);
-        $epoch = unpack 'i', $buffer;
+	#Read Time
+	read ($fh, $buffer, 4);
+	$epoch = unpack 'i', $buffer;
 	$time = localtime($epoch)->strftime('%F %T');
 	print "Time = $time\n";
 
-        #Read Bits
-        read ($fh, $buffer, 4);
-        $bits = unpack 'i', $buffer;
-        print "Bits = $bits\n";
+	#Read Bits
+	read ($fh, $buffer, 4);
+	$bits = unpack 'i', $buffer;
+	print "Bits = $bits\n";
 
-        #Read Nonce
-        read ($fh, $buffer, 4);
-        $nonce = unpack 'H*', $buffer;
-        print "Nonce = $nonce\n";
+	#Read Nonce
+	read ($fh, $buffer, 4);
+	$nonce = unpack 'H*', $buffer;
+	print "Nonce = $nonce\n";
 
-	#Read Tx count
-	read ($fh, $buffer, 9);
-        $txcount = unpack 'i', $buffer;
-        print "TX Count = $txcount\n";	
+	#Read rest of block
+	read ($fh, $buffer, $blocksize-80);
+	$blockRest = unpack 'H*', $buffer;
 
-	$wait = <>;
+	($txcount, $rest)=($blockRest=~/^(.*?)01000000(.*)$/);
+
+	print "Tx count = $txcount\n";
+	print "Rest = $rest\n";
+
+	$loop = $loop + 1;
 }
