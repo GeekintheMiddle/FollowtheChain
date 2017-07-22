@@ -4,17 +4,17 @@ use warnings;
 use 5.010;
 use Time::Piece;
 
-my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $wait, $epoch, $txcount, $blockRest, $rest, $txversion, $txrest, $incounter, $inputs);
-my ($locktime);
+my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $epoch, $txcount, $txcountDec, $n);
+my ($txversion, $incounter, $incounterDec, $inputs, $TxOutHash, $TxOutIndex, $ScriptsLength, $ScriptsLengthDec, $script, $sequence, $outcounter, $outcounterDec, $bitcoin, $PKScriptLength, $PKScriptLengthDec, $PKScript, $Locktime);
 
 my $blocknr = 0;
 my $loop = 0;
 
-open my $fh, '<', '/storage/block/blocks/blk00000.dat' or die "File not found: $!";
+open my $fh, '<', '/storage/block/blocks/blk00065.dat' or die "File not found: $!";
 
 binmode($fh);
 
-while (read ($fh, $buffer, 4) != 0 && $loop <= 10) {
+while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 	next unless ((unpack 'H*', $buffer) eq "f9beb4d9");
 
 	#Blocknr.
@@ -37,13 +37,21 @@ while (read ($fh, $buffer, 4) != 0 && $loop <= 10) {
 
 	#Hash Prev Block
 	read ($fh, $buffer, 32);
-	$hashprev = unpack 'H*', $buffer;
-	print "Hash Prev Block = $hashprev\n";
-
+	my @hashprev = unpack 'H*', $buffer;
+	print "Hash Prev Block = ";
+	for (@hashprev){
+		my $rev = join '', reverse m/([[:xdigit:]]{2})/g;
+	    print "$rev\n";
+	}
+	
 	#Hash Merkel Root
 	read ($fh, $buffer, 32);
-	$hashmerkel = unpack 'H*', $buffer;
-	print "Hash Merkel Root = $hashmerkel\n";
+	my @hashmerkel = unpack 'H*', $buffer;
+	print "Hash Merkel Root = ";
+	for (@hashmerkel){
+		my $rev = join '', reverse m/([[:xdigit:]]{2})/g;
+	    print "$rev\n";
+	}
 
 	#Read Time
 	read ($fh, $buffer, 4);
@@ -53,82 +61,99 @@ while (read ($fh, $buffer, 4) != 0 && $loop <= 10) {
 
 	#Read Bits
 	read ($fh, $buffer, 4);
-	$bits = unpack 'H*', $buffer;
-	print "Bits = $bits\n";
+	my @bits = unpack 'H*', $buffer;
+	print "Difficulty (Bits) = ";
+	for (@bits){
+		my $rev = join '', reverse m/([[:xdigit:]]{2})/g;
+	    print "$rev\n";
+	}
 
 	#Read Nonce
 	read ($fh, $buffer, 4);
-	$nonce = unpack 'H*', $buffer;
+	$nonce = unpack 'I', $buffer;
 	print "Nonce = $nonce\n";
 
 	#Read Txcounter
 	read ($fh, $buffer, 1);
 	$txcount = unpack 'H*', $buffer;
-	print "Txcount = $txcount\n";
+	$txcountDec = sprintf("%d", hex($txcount));
+	print "Transaction counter HEX = $txcount\n\n";
+	print "Transaction counter = $txcountDec\n\n";
 
-    #Read TX version
-	read ($fh, $buffer, 4);
-	$txversion = unpack 'i', $buffer;
-	print "Txversion = $txversion\n";
+	my $txnr = 1;
+	while ($txnr <= $txcountDec) {
 
-	 #Read incounter
-	read ($fh, $buffer, 1);
-	$incounter = unpack 'H*', $buffer;
-	my $incounterDec = sprintf("%d", hex($incounter));
-	print "Incounter = $incounterDec\n";
+		print "Transaction number = $txnr\n";
+	    #Read TX version
+		read ($fh, $buffer, 4);
+		$txversion = unpack 'i', $buffer;
+		print "Transaction Version = $txversion\n";
 
-	#Read var
-	read ($fh, $buffer, 32);
-	my $TxOutHash = unpack 'H*', $buffer;
-	print "TxOutHash = $TxOutHash\n";
+		 #Read incounter
+		read ($fh, $buffer, 1);
+		$incounter = unpack 'H*', $buffer;
+		$incounterDec = sprintf("%d", hex($incounter));
+		print "Input counter = $incounterDec\n";
 
-	#Read Signumber
-	read ($fh, $buffer, 4);
-	my $TxOutIndex = unpack 'H*', $buffer;
-	print "TxOutIndex = $TxOutIndex\n";
+		#Read Transaction out hash
+		read ($fh, $buffer, 32);
+		$TxOutHash = unpack 'H*', $buffer;
+		print "Transaction out hash = $TxOutHash\n";
 
-	#Read Script length
-	read ($fh, $buffer, 1);
-	my $ScriptsLength = unpack 'H*', $buffer;
-	my $ScriptsLengthDec = sprintf("%d", hex($ScriptsLength));
-	print "Scripts length = $ScriptsLengthDec\n";
+		#Read Transaction out Index
+		read ($fh, $buffer, 4);
+		$TxOutIndex = unpack 'H*', $buffer;
+		print "Transaction out Index = $TxOutIndex\n";
 
-	#Read Script
-	read ($fh, $buffer, $ScriptsLengthDec);
-	my $script = unpack 'H*', $buffer;
-	print "Script = $script\n";
+		#Read Script length
+		read ($fh, $buffer, 1);
+		$ScriptsLength = unpack 'H*', $buffer;
+		$ScriptsLengthDec = sprintf("%d", hex($ScriptsLength));
+		print "Scripts length = $ScriptsLengthDec\n";
 
-	#Read Sequence
-	read ($fh, $buffer, 4);
-	my $sequence = unpack 'H*', $buffer;
-	print "Sequence = $sequence\n";
+		#Read Script
+		read ($fh, $buffer, $ScriptsLengthDec);
+		$script = unpack 'H*', $buffer;
+		print "Script = $script\n";
 
-	#Read outcounter
-	read ($fh, $buffer, 1);
-	my $outcounter = unpack 'H*', $buffer;
-	my $outcounterDec = sprintf("%d", hex($outcounter));
-	print "Outcounter = $outcounterDec\n";
+		#Read Sequence
+		read ($fh, $buffer, 4);
+		$sequence = unpack 'H*', $buffer;
+		print "Sequence = $sequence\n";
 
-	#Read Bitcoin value
-	read ($fh, $buffer, 8);
-	my $bitcoin = unpack 'H*', $buffer;
-	print "bitcoin = $bitcoin\n";
+		#Read outcounter
+		read ($fh, $buffer, 1);
+		$outcounter = unpack 'H*', $buffer;
+		$outcounterDec = sprintf("%d", hex($outcounter));
+		print "Output counter = $outcounterDec\n";
 
-	#Read pk_script length
-	read ($fh, $buffer, 1);
-	my $PKScriptLength = unpack 'H*', $buffer;
-	my $PKScriptLengthDec = sprintf("%d", hex($PKScriptLength));
-	print "PK Script length = PKScriptLengthDec\n";
+		#my $out = 1;
+		#while ($out <= $outcounterDec) {
+			#Read Bitcoin value
+			read ($fh, $buffer, 8);
+			$bitcoin = unpack 'H*', $buffer;
+			print "Bitcoin value = $bitcoin\n";
 
-	#Read Script
-	read ($fh, $buffer, $PKScriptLengthDec);
-	my $PKScript = unpack 'H*', $buffer;
-	print "PKScript = $PKScript\n";
+			#Read PK script length
+			read ($fh, $buffer, 1);
+			$PKScriptLength = unpack 'H*', $buffer;
+			$PKScriptLengthDec = sprintf("%d", hex($PKScriptLength));
+			print "PK Script length = $PKScriptLengthDec\n";
 
-	#Read Locktime
-	read ($fh, $buffer, 4);
-	my $Locktime = unpack 'H*', $buffer;
-	print "Locktime = $Locktime\n";
+			#Read PK Script
+			read ($fh, $buffer, $PKScriptLengthDec);
+			$PKScript = unpack 'H*', $buffer;
+			print "PK Script = $PKScript\n";
+			#$out = $out + 1;
+		#}
+
+		#Read Locktime
+		read ($fh, $buffer, 4);
+		$Locktime = unpack 'H*', $buffer;
+		print "Locktime = $Locktime\n\n";
+
+		$txnr = $txnr + 1;
+	}
 
 	$loop = $loop + 1;
 }
