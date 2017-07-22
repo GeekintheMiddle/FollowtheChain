@@ -4,7 +4,7 @@ use warnings;
 use 5.010;
 use Time::Piece;
 
-my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $epoch, $txcount, $txcountDec, $n);
+my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $epoch, @txcount, $txcountDec, $rev);
 my ($txversion, $incounter, $incounterDec, $inputs, $TxOutHash, $TxOutIndex, $ScriptsLength, $ScriptsLengthDec, $script, $sequence, $outcounter, $outcounterDec, $bitcoin, $PKScriptLength, $PKScriptLengthDec, $PKScript, $Locktime);
 
 my $blocknr = 0;
@@ -71,22 +71,47 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 	#Read Nonce
 	read ($fh, $buffer, 4);
 	$nonce = unpack 'I', $buffer;
-	print "Nonce = $nonce\n";
+	print "Nonce = $nonce\n\n";
 
-	#Read Txcounter
+	#Read varint
 	read ($fh, $buffer, 1);
-	$txcount = unpack 'H*', $buffer;
-	$txcountDec = sprintf("%d", hex($txcount));
-	print "Transaction counter HEX = $txcount\n\n";
-	print "Transaction counter = $txcountDec\n\n";
+	my $varint = unpack 'H*', $buffer;
+	#$txcountDec = sprintf("%d", hex($txcount));
+	print "Read varint = $varint\n";
+
+	if ($varint eq "fd"){
+		read ($fh, $buffer, 2);
+		@txcount = unpack 'H*', $buffer;
+		for (@txcount){
+			$rev = join '', reverse m/([[:xdigit:]]{2})/g;
+		}
+	}elsif ($varint eq "fe"){
+		read ($fh, $buffer, 4);
+		@txcount = unpack 'H*', $buffer;
+		for (@txcount){
+			$rev = join '', reverse m/([[:xdigit:]]{2})/g;
+		}
+	} elsif ($varint eq "ff"){
+		read ($fh, $buffer, 8);
+		@txcount = unpack 'H*', $buffer;
+		for (@txcount){
+			$rev = join '', reverse m/([[:xdigit:]]{2})/g;
+		}
+	} else {
+		$rev = $varint;
+	}
+
+	my $revDec = sprintf("%d", hex($rev));
+	print "Transaction counter HEX = $revDec\n\n";
 
 	my $txnr = 1;
-	while ($txnr <= $txcountDec) {
+	while ($txnr <= $revDec) {
 
 		print "Transaction number = $txnr\n";
+
 	    #Read TX version
 		read ($fh, $buffer, 4);
-		$txversion = unpack 'i', $buffer;
+		$txversion = unpack 'H*', $buffer;
 		print "Transaction Version = $txversion\n";
 
 		 #Read incounter
