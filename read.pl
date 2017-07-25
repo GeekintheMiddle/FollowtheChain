@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use 5.010;
 use Time::Piece;
+use bigint qw/hex/;
 
 my $blocknr = 0;
 my $loop = 0;
@@ -16,7 +17,7 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 
 	#Blocknr.
 	my $blocknr = $blocknr + 1;
-	print "Block number: $blocknr\n";
+	print "### Block number: $blocknr ###\n";
 
 	#Read MagicNR
 	my $magicnr = unpack 'H*', $buffer;
@@ -73,9 +74,8 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 	#Read varint
 	read ($fh, $buffer, 1);
 	my $varint = unpack 'H*', $buffer;
-	#$txcountDec = sprintf("%d", hex($txcount));
-	print "Read varint = $varint\n";
 
+	#Choose the length of the transaction counter.
 	my $rev;
 	if ($varint eq "fd"){
 		read ($fh, $buffer, 2);
@@ -100,24 +100,26 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 	}
 
 	my $revDec = sprintf("%d", hex($rev));
-	print "Transaction counter HEX = $revDec\n\n";
+	print "Transaction counter = $revDec\n\n";
 
+	#A loop through all Transactions.
 	my $txnr = 1;
 	while ($txnr <= $revDec) {
 
-		print "Transaction number = $txnr\n";
+		print "### Transaction number = $txnr ###\n";
 
-	    #Read TX version
+		#Read TX version
 		read ($fh, $buffer, 4);
 		my $txversion = unpack 'i', $buffer;
 		print "Transaction Version = $txversion\n";
 
-		 #Read incounter
+		#Read incounter
 		read ($fh, $buffer, 1);
 		my $incounter = unpack 'H*', $buffer;
 		my $incounterDec = sprintf("%d", hex($incounter));
 		print "Input counter = $incounterDec\n\n";
 
+		# A loop to through all the input transactions
 		my $in = 1;
 		while ($in <= $incounterDec) {
 
@@ -155,8 +157,9 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 		read ($fh, $buffer, 1);
 		my $outcounter = unpack 'H*', $buffer;
 		my $outcounterDec = sprintf("%d", hex($outcounter));
-		print "Output counter = $outcounterDec\n";
-
+		print "Output counter = $outcounterDec\n\n";
+		
+		# A loop to through all the output transactions
 		my $out = 1;
 		while ($out <= $outcounterDec) {
 
@@ -165,10 +168,13 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 			#Read Bitcoin value
 			read ($fh, $buffer, 8);
 			my @bitcoin = unpack 'H*', $buffer;
-			print "Bitcoin value = ";
+			print "Bitcoin = ";
 			for (@bitcoin){
 				my $revBitcoin = join '', reverse m/([[:xdigit:]]{2})/g;
-		    	print "$revBitcoin\n";
+		    		$revBitcoin =~ s/^0+//g; 
+				my $bitcoinDec = sprintf("%d", hex($revBitcoin));
+				my $bitcoinFull=$bitcoinDec/100000000;
+				print "$bitcoinFull\n" 
 			}
 
 			#Read PK script length
