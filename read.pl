@@ -8,7 +8,7 @@ use bigint qw/hex/;
 my $blocknr = 0;
 my $loop = 0;
 
-open my $fh, '<', '/storage/block/blocks/blk00000.dat' or die "File not found: $!";
+open my $fh, '<', '/storage/block/blocks/blk00065.dat' or die "File not found: $!";
 
 binmode($fh);
 
@@ -146,6 +146,10 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 			my $script = unpack 'H*', $buffer;
 			print "Script = $script\n";
 
+			#Enable for script to Ascii
+			#my $scriptAscii = pack("H*", $script);
+			#print "Script Ascii = $scriptAscii\n";
+
 			#Read Sequence
 			read ($fh, $buffer, 4);
 			my $sequence = unpack 'H*', $buffer;
@@ -174,7 +178,8 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 		    		$revBitcoin =~ s/^0+//g; 
 				my $bitcoinDec = sprintf("%d", hex($revBitcoin));
 				my $bitcoinFull=$bitcoinDec/100000000;
-				print "$bitcoinFull\n" 
+				print "$bitcoinFull\n";
+				print "Bitcoin smallest unit: $bitcoinDec\n";
 			}
 
 			#Read PK script length
