@@ -4,9 +4,6 @@ use warnings;
 use 5.010;
 use Time::Piece;
 
-my ($buffer, $magicnr, $blocksize, $version, $hashprev, $hashmerkel, $time, $bits, $nonce, $epoch, @txcount, $txcountDec, $rev);
-my ($txversion, $incounter, $incounterDec, $inputs, $TxOutHash, $TxOutIndex, $ScriptsLength, $ScriptsLengthDec, $script, $sequence, $outcounter, $outcounterDec, $bitcoin, $PKScriptLength, $PKScriptLengthDec, $PKScript, $Locktime);
-
 my $blocknr = 0;
 my $loop = 0;
 
@@ -14,25 +11,25 @@ open my $fh, '<', '/storage/block/blocks/blk00000.dat' or die "File not found: $
 
 binmode($fh);
 
-while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
+while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 	next unless ((unpack 'H*', $buffer) eq "f9beb4d9");
 
 	#Blocknr.
-	$blocknr = $blocknr + 1;
+	my $blocknr = $blocknr + 1;
 	print "Block number: $blocknr\n";
 
 	#Read MagicNR
-	$magicnr = unpack 'H*', $buffer;
+	my $magicnr = unpack 'H*', $buffer;
 	print "Magicnr = $magicnr\n";
 
 	#Read Blocksize
 	read ($fh, $buffer, 4);
-	$blocksize = unpack 'i', $buffer;
+	my $blocksize = unpack 'i', $buffer;
 	print "Blocksize = $blocksize\n";
 
 	#Read Version
 	read ($fh, $buffer, 4);
-	$version = unpack 'i', $buffer;
+	my $version = unpack 'i', $buffer;
 	print "Version = $version\n";
 
 	#Hash Prev Block
@@ -55,8 +52,8 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 
 	#Read Time
 	read ($fh, $buffer, 4);
-	$epoch = unpack 'i', $buffer;
-	$time = localtime($epoch)->strftime('%F %T');
+	my $epoch = unpack 'i', $buffer;
+	my $time = localtime($epoch)->strftime('%F %T');
 	print "Time = $time\n";
 
 	#Read Bits
@@ -70,7 +67,7 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 
 	#Read Nonce
 	read ($fh, $buffer, 4);
-	$nonce = unpack 'I', $buffer;
+	my $nonce = unpack 'I', $buffer;
 	print "Nonce = $nonce\n\n";
 
 	#Read varint
@@ -79,21 +76,22 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 	#$txcountDec = sprintf("%d", hex($txcount));
 	print "Read varint = $varint\n";
 
+	my $rev;
 	if ($varint eq "fd"){
 		read ($fh, $buffer, 2);
-		@txcount = unpack 'H*', $buffer;
+		my @txcount = unpack 'H*', $buffer;
 		for (@txcount){
 			$rev = join '', reverse m/([[:xdigit:]]{2})/g;
 		}
 	}elsif ($varint eq "fe"){
 		read ($fh, $buffer, 4);
-		@txcount = unpack 'H*', $buffer;
+		my @txcount = unpack 'H*', $buffer;
 		for (@txcount){
 			$rev = join '', reverse m/([[:xdigit:]]{2})/g;
 		}
 	} elsif ($varint eq "ff"){
 		read ($fh, $buffer, 8);
-		@txcount = unpack 'H*', $buffer;
+		my @txcount = unpack 'H*', $buffer;
 		for (@txcount){
 			$rev = join '', reverse m/([[:xdigit:]]{2})/g;
 		}
@@ -111,13 +109,13 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 
 	    #Read TX version
 		read ($fh, $buffer, 4);
-		$txversion = unpack 'i', $buffer;
+		my $txversion = unpack 'i', $buffer;
 		print "Transaction Version = $txversion\n";
 
 		 #Read incounter
 		read ($fh, $buffer, 1);
-		$incounter = unpack 'H*', $buffer;
-		$incounterDec = sprintf("%d", hex($incounter));
+		my $incounter = unpack 'H*', $buffer;
+		my $incounterDec = sprintf("%d", hex($incounter));
 		print "Input counter = $incounterDec\n\n";
 
 		my $in = 1;
@@ -127,36 +125,36 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 
 			#Read Transaction out hash
 			read ($fh, $buffer, 32);
-			$TxOutHash = unpack 'H*', $buffer;
+			my $TxOutHash = unpack 'H*', $buffer;
 			print "Transaction out hash = $TxOutHash\n";
 
 			#Read Transaction out Index
 			read ($fh, $buffer, 4);
-			$TxOutIndex = unpack 'H*', $buffer;
+			my $TxOutIndex = unpack 'H*', $buffer;
 			print "Transaction out index = $TxOutIndex\n";
 
 			#Read Script length
 			read ($fh, $buffer, 1);
-			$ScriptsLength = unpack 'H*', $buffer;
-			$ScriptsLengthDec = sprintf("%d", hex($ScriptsLength));
+			my $ScriptsLength = unpack 'H*', $buffer;
+			my $ScriptsLengthDec = sprintf("%d", hex($ScriptsLength));
 			print "Scripts length = $ScriptsLengthDec\n";
 
 			#Read Script
 			read ($fh, $buffer, $ScriptsLengthDec);
-			$script = unpack 'H*', $buffer;
+			my $script = unpack 'H*', $buffer;
 			print "Script = $script\n";
 
 			#Read Sequence
 			read ($fh, $buffer, 4);
-			$sequence = unpack 'H*', $buffer;
+			my $sequence = unpack 'H*', $buffer;
 			print "Sequence = $sequence\n\n";
 			$in = $in + 1;
 		}
 
 		#Read outcounter
 		read ($fh, $buffer, 1);
-		$outcounter = unpack 'H*', $buffer;
-		$outcounterDec = sprintf("%d", hex($outcounter));
+		my $outcounter = unpack 'H*', $buffer;
+		my $outcounterDec = sprintf("%d", hex($outcounter));
 		print "Output counter = $outcounterDec\n";
 
 		my $out = 1;
@@ -175,20 +173,20 @@ while (read ($fh, $buffer, 4) != 0 && $loop < 1) {
 
 			#Read PK script length
 			read ($fh, $buffer, 1);
-			$PKScriptLength = unpack 'H*', $buffer;
-			$PKScriptLengthDec = sprintf("%d", hex($PKScriptLength));
+			my $PKScriptLength = unpack 'H*', $buffer;
+			my $PKScriptLengthDec = sprintf("%d", hex($PKScriptLength));
 			print "PK Script length = $PKScriptLengthDec\n";
 
 			#Read PK Script
 			read ($fh, $buffer, $PKScriptLengthDec);
-			$PKScript = unpack 'H*', $buffer;
+			my $PKScript = unpack 'H*', $buffer;
 			print "PK Script = $PKScript\n";
 			$out = $out + 1;
 		}
 
 		#Read Locktime
 		read ($fh, $buffer, 4);
-		$Locktime = unpack 'H*', $buffer;
+		my $Locktime = unpack 'H*', $buffer;
 		print "Locktime = $Locktime\n\n";
 
 		$txnr = $txnr + 1;
