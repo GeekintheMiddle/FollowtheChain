@@ -19,11 +19,14 @@ open my $fh, '<', $file or die "File not found: $!";
 
 binmode($fh);
 
-while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
+while (read ($fh, my $buffer, 4) != 0) {
 	next unless ((unpack 'H*', $buffer) eq "f9beb4d9");
 
+	print "Press enter to go to next block.\n";
+	my $next = <STDIN>;
+
 	#Blocknr.
-	my $blocknr = $blocknr + 1;
+	$blocknr = $blocknr + 1;
 	print "### Block number: $blocknr ###\n";
 
 	#Read MagicNR
@@ -209,6 +212,5 @@ while (read ($fh, my $buffer, 4) != 0 && $loop < 1) {
 
 		$txnr = $txnr + 1;
 	}
-
 	$loop = $loop + 1;
 }
