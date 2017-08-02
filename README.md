@@ -8,18 +8,23 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
-
 ```
 Perl
 ```
 
-### Installing
+### How to install and run the program 
 
 ``` 
 git clone https://github.com/GeekintheMiddle/FollowtheChain.git
 cd FollowtheChain
-perl read.pl
+perl read.pl {block chain file}
+```
+
+### Example
+
+I've added a 6MB file with part of the block chain. You can use this to test the program.
+```
+perl read.pl bitcoin.part
 ```
 
 ## Authors
