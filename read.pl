@@ -8,7 +8,14 @@ use bigint qw/hex/;
 my $blocknr = 0;
 my $loop = 0;
 
-open my $fh, '<', '/storage/block/blocks/blk00065.dat' or die "File not found: $!";
+my $num_args = $#ARGV + 1;
+if ($num_args != 1) {
+	print "Usage: read.pl bitcoin_file\n\n";
+	exit;
+}
+
+my $file=$ARGV[0];
+open my $fh, '<', $file or die "File not found: $!";
 
 binmode($fh);
 
